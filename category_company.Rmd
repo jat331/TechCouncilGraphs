@@ -1,0 +1,280 @@
+---
+title: "company category"
+output: html_document
+date: "2024-04-12"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readxl)
+library(tidyr)
+library(ggplot2)
+library(tidyverse)
+library(lubridate)
+```
+
+```{r}
+member_data <- "/Users/heiyo/Desktop/MQE/Capstone/Current.Members.JoinDate.xlsx"
+member_data1 <- "/Users/heiyo/Desktop/MQE/Capstone/NonRenewals.xlsx"
+sheet <- excel_sheets(member_data)
+sheet1 <- excel_sheets(member_data1)
+member1 <- read_excel(member_data, sheet = sheet[1])
+member2 <- read_excel(member_data1, sheet = sheet1[1])
+
+
+# Merge sheets, filling missing values with NA
+combined_data <- merge(member1, member2, by = "Company", all = TRUE)
+# Replace missing values with 0
+combined_data[is.na(combined_data)] <- 0
+
+# Rename columns
+names(combined_data)[names(combined_data) == "Join Date.y"] <- "Join_Date"
+names(combined_data)[names(combined_data) == "Join Date.x"] <- "Rejoin_Date"
+
+# Convert Join Date columns to date format
+combined_data$Rejoin_Date <- as.Date(combined_data$Rejoin_Date)
+combined_data$Join_Date <- as.Date(combined_data$Join_Date)
+combined_data$`Paid Through` <- as.Date(combined_data$`Paid Through`)
+
+# If Rejoin = Join, make Rejoin "1970-01-01"
+combined_data$Rejoin_Date[combined_data$Rejoin_Date == combined_data$Join_Date] <- as.Date("1970-01-01")
+
+#Drop all irrelevant columns
+combined_data <- combined_data[, !(names(combined_data) %in% c("Member Type.x", "Member Type.y", "Status", "Cluster"))]
+
+# Convert dates into months
+combined_data$Rejoin_Date_Months <- (year(combined_data$Rejoin_Date) * 12) + month(combined_data$Rejoin_Date)
+combined_data$Paid_Through_Months <- (year(combined_data$`Paid Through`) * 12) + month(combined_data$`Paid Through`)
+combined_data$Join_Date_Months <- (year(combined_data$Join_Date) * 12) + month(combined_data$Join_Date)
+```
+
+
+```{r}
+#Creating Member Status Column
+# Create a sequence of months from 1 to 72
+months <- 1:72
+
+# Expand the data frame to have 60 rows per company
+big_data <- expand(combined_data, Company, Month = months)
+```
+
+```{r}
+#Combine the month columns to combined data set
+mem_data <- merge(big_data, combined_data, by = "Company", all = TRUE)
+```
+
+```{r}
+# Convert dates into months
+mem_data$Join_Date_Months <- (year(mem_data$Join_Date) * 12) + month(mem_data$Join_Date)
+mem_data$Paid_Through_Months <- (year(mem_data$`Paid Through`) * 12) + month(mem_data$`Paid Through`)
+mem_data$Month_value <- mem_data$Month + 24216
+#Create member status column that enters value 1 if Month_value is greater or equal to Join_Date_Months 
+mem_data$Member_Status <- ifelse(mem_data$Month_value >= mem_data$Join_Date_Months, 1, 0)
+#Change member status column that enters value 0 if Paid_Through_Months is less than Month_value
+mem_data$Member_Status <- ifelse(mem_data$Paid_Through_Months < mem_data$Month_value, 0, mem_data$Member_Status)
+
+# Check if Rejoin_Date_Months is greater than or equal to Paid_Through_Months
+# If true, proceed with updating Member_Status based on Month_value and Rejoin_Date_Months
+# If false, keep Member_Status unchanged
+mem_data$Member_Status <- ifelse(mem_data$Rejoin_Date_Months >= mem_data$Paid_Through_Months, 
+                                  ifelse(mem_data$Month_value >= mem_data$Rejoin_Date_Months, 1, mem_data$Member_Status),
+                                  mem_data$Member_Status)
+# 208512 mem_data
+```
+
+```{r}
+#Make another dataset that only shows the columns needed for analysis
+#analysis_columns <- c("Company", "Month", "Member_Status", "Out Of Business")
+#analysis_data <- mem_data[analysis_columns]
+```
+
+```{r}
+# write.csv(mem_data, file = "mem_data.csv", row.names = FALSE)
+```
+
+```{r}
+new_mem_data <- mem_data
+```
+
+```{r}
+new_mem_data <- new_mem_data %>%
+  select(`Company`,`Month`,`Category`)
+```
+
+```{r}
+new_mem_data <- subset(new_mem_data, Company != "(Erased)")
+```
+
+```{r}
+new_mem_data <- new_mem_data %>%
+  distinct(Company, Month, .keep_all = TRUE)
+```
+
+
+```{r}
+unique_categories <- unique(new_mem_data$Category)
+num_categories <- length(unique_categories)
+unique_categories
+```
+
+```{r}
+category_counts <- table(new_mem_data$Category)
+category_counts
+56952+2520+26136+2880+67104+26208 
+```
+```{r}
+new_mem_data$Category <- gsub("Edu", "Education", new_mem_data$Category)
+new_mem_data$Category <- gsub("Ent", "Entrepreneur", new_mem_data$Category)
+new_mem_data$Category <- gsub("NP", "Non-Profit", new_mem_data$Category)
+new_mem_data$Category <- gsub("Tech", "Technology", new_mem_data$Category)
+new_mem_data$Category <- gsub("TU", "Technology User", new_mem_data$Category)
+
+
+```
+
+```{r}
+category_counts <- table(new_mem_data$Category)
+category_counts
+```
+
+
+
+```{r}
+category_0_mem_data <- new_mem_data[new_mem_data$Category == 0, ]
+```
+
+```{r}
+# Extract unique company names
+unique_companies <- unique(category_0_mem_data$Company)
+unique_companies_data <- data.frame(Company = unique_companies)
+```
+
+```{r}
+# Find the companies that are in member1 but not in unique_companies_data
+different_companies <- setdiff(member1$Company, unique_companies_data$Company)
+
+# Print the different companies
+print(different_companies)
+
+```
+
+```{r}
+# Subset member1 to exclude the rows corresponding to different_companies
+member1_filtered <- member1[!member1$Company %in% different_companies, ]
+
+# Print the first few rows of the filtered dataset
+head(member1_filtered)
+
+```
+
+
+```{r}
+# Assuming df is your current data frame and category_0_df is the new data frame containing category 0 observations
+
+# First, let's assume you have a common column named "company_name" in both data frames
+
+# Merge the category from category_0_df to df based on company name
+category_0_mem_data <- merge(member1_filtered, category_0_mem_data[, c("Company", "Category")], by = "Company", all.x = TRUE)
+
+# Print the first few rows of the merged data frame
+head(category_0_mem_data)
+ 
+```
+
+
+```{r}
+company_row_counts <- table(category_0_mem_data$Company)
+companies_less_than_72_rows <- names(company_row_counts[company_row_counts < 72])
+print(companies_less_than_72_rows)
+```
+
+```{r}
+category_0_mem_data <- category_0_mem_data %>%
+  select(-`Category`)
+```
+
+
+
+```{r}
+# Assuming merged_df is your data frame
+# Change the column name "member_type" to "category"
+colnames(category_0_mem_data)[colnames(category_0_mem_data) == "Member Type"] <- "Category"
+
+# Print the new column names
+print(colnames(category_0_mem_data))
+
+```
+
+```{r}
+category_0_mem_data <- category_0_mem_data %>%
+  select(`Company`,`Category`)
+```
+
+```{r}
+missing_values <- any(is.na(category_0_mem_data$Category))
+
+# Print the result
+if (missing_values) {
+  print("There are missing values (NA) in the Category column.")
+} else {
+  print("There are no missing values (NA) in the Category column.")
+}
+```
+
+```{r}
+library(dplyr)
+
+# Assuming your data frame is named category_0_mem_data
+unique_company_counts <- category_0_mem_data %>%
+  group_by(Category) %>%
+  summarise(num_unique_companies = n_distinct(Company))
+
+print(unique_company_counts)
+
+```
+
+
+```{r}
+# Update the Category information in mem_data for those rows where Category is 0
+new_mem_data$Category[new_mem_data$Category == 0] <- category_0_mem_data$Category
+
+# Verify the update
+updated_categories <- table(new_mem_data$Category)
+print(updated_categories)
+
+```
+
+```{r}
+5688+36936+6912+93816+38448 
+```
+
+
+```{r}
+new_mem_data <- new_mem_data %>%
+  select(Company, Category)
+```
+
+```{r}
+missing_values <- any(is.na(new_mem_data$Category))
+
+# Print the result
+if (missing_values) {
+  print("There are missing values (NA) in the Category column.")
+} else {
+  print("There are no missing values (NA) in the Category column.")
+}
+```
+
+
+```{r}
+write.csv(new_mem_data, "company_catergory.csv")
+```
+
+
+
+
+
+

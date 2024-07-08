@@ -1,0 +1,835 @@
+---
+title: "EventParticipation_Update"
+output: html_document
+date: "2024-03-12"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readxl)
+library(dplyr)
+```
+
+# ++++++++++++ Cross Event ++++++++++++++++ #
+```{r}
+# using the cross event data #
+cross_data <- "/Users/jamesturner/Desktop/Tech Council/Cross-Event_40_Events_Sales_Summary_Excel_93284519469_20240201_2114.xlsx"
+cross_data <- read_excel(cross_data)
+```
+
+```{r}
+# clean cross event data, only left 'event name' and 'event start date' 
+cleaned_cross <- cross_data %>%
+  select(`Event Name`, `Event Start Date`)
+```
+
+```{r}
+# remove the part of time, only left date
+cleaned_cross$`Event Start Date` <- sub(" .*", "", cleaned_cross$`Event Start Date`)
+```
+
+```{r}
+# remove the repeat event name
+cleaned_cross <- unique(cleaned_cross[, c("Event Name", "Event Start Date")])
+```
+
+```{r}
+# rename the col names, prepare for merge with CleanedMember.EventParticipation.csv
+names(cleaned_cross)[names(cleaned_cross) == "Event Name"] <- "Title"
+names(cleaned_cross)[names(cleaned_cross) == "Event Start Date"] <- "Event.Date"
+```
+
+```{r}
+# change the date formate
+cleaned_cross <- cleaned_cross %>%
+  mutate(`Event.Date` = as.Date(`Event.Date`, format = "%m/%d/%y"))
+```
+
+```{r}
+# still change the date formate
+cleaned_cross <- cleaned_cross %>%
+  mutate(Event.Date = format(as.Date(Event.Date, format = "%m/%d/%y"), "%Y-%m-%d"))
+```
+
+```{r}
+# This csv contains the event date get from the cross event data
+#write.csv(cleaned_cross, file = "CleanedCrossEventDate.csv", row.names = FALSE)
+```
+
+# ++++++++++++ CleanedMember.EventParticipation ++++++++++++++++ #
+```{r}
+Cleaned_eventdate <- read.csv("/Users/jamesturner/Desktop/Tech Council/CleanedMember.EventParticipation.csv")
+```
+
+```{r}
+# only left the 'Title' (Event name) and 'Event.Date' 
+Cleaned_eventdate <- Cleaned_eventdate %>%
+  select(`Title`, `Event.Date`)
+```
+
+```{r}
+# remove repeat variables
+Cleaned_eventdate <- unique(Cleaned_eventdate[, c("Title", "Event.Date")])
+```
+
+```{r}
+# rename...
+Cleaned_eventdate$Title <- sub("*** postponed-Hire UP: College & University Recruiting", "Hire UP: College & University Recruiting", Cleaned_eventdate$Title, fixed = TRUE)
+```
+
+# ++++++++++++ Cross Event + CleanedMember.EventParticipation ++++++++++++++++ #
+```{r}
+# merging the event date from cross event data and CleanedMember.EventParticipation data
+Merge_Cleaned_eventdate <- merge(Cleaned_eventdate,cleaned_cross, by = c("Title", "Event.Date"), all = TRUE) 
+# 365 events 
+```
+
+```{r}
+Merge_Cleaned_eventdate <- unique(Merge_Cleaned_eventdate[, c("Title", "Event.Date")])
+# 365, no repeat event
+```
+
+```{r}
+# this dataset has all the event dates get from Cross Event dataset and CleanedMember.EventParticipation dataset
+write.csv(Merge_Cleaned_eventdate, file = "AllEventDate.csv", row.names = FALSE)
+```
+
+# ++++++++++++ Attendee data ++++++++++++++++ #
+```{r}
+att_data <- "/Users/jamesturner/Desktop/Tech Council/Event Attendees 2018 through 2023.xlsx"
+sheet <- excel_sheets(att_data)
+att_2018data <- read_excel(att_data, sheet = sheet[1])
+att_2019data <- read_excel(att_data, sheet = sheet[2])
+att_2020data <- read_excel(att_data, sheet = sheet[3])
+att_2021data <- read_excel(att_data, sheet = sheet[4])
+att_2022data <- read_excel(att_data, sheet = sheet[5])
+att_2023data <- read_excel(att_data, sheet = sheet[6])
+```
+
+```{r}
+# select the col `Company`, `Title`, `Company Member Type`, `Paid Through`
+cleaned_18att <- att_2018data %>%
+  select(`Company`, `Title`, `Company Member Type`, `Paid Through`)
+cleaned_19att <- att_2019data %>%
+  select(`Company`, `Title`, `Company Member Type`, `Paid Through`)
+cleaned_20att <- att_2020data %>%
+  select(`Company`, `Title`, `Company Member Type`, `Paid Through`)
+cleaned_21att <- att_2021data %>%
+  select(`Company`, `Title`, `Company Member Type`, `Paid Through`)
+cleaned_22att <- att_2022data %>%
+  select(`Company`, `Title`, `Company Member Type`, `Paid Through`)
+cleaned_23att <- att_2023data %>%
+  select(`Company`, `Title`, `Company Member Type`, `Paid Through`)
+```
+
+```{r}
+# remove the NA 
+cleaned_18att <- subset(cleaned_18att, !is.na(`Company Member Type`) & !is.na(`Paid Through`))
+cleaned_19att <- subset(cleaned_19att, !is.na(`Company Member Type`) & !is.na(`Paid Through`))
+cleaned_20att <- subset(cleaned_20att, !is.na(`Company Member Type`) & !is.na(`Paid Through`))
+cleaned_21att <- subset(cleaned_21att, !is.na(`Company Member Type`) & !is.na(`Paid Through`))
+cleaned_22att <- subset(cleaned_22att, !is.na(`Company Member Type`) & !is.na(`Paid Through`))
+cleaned_23att <- subset(cleaned_23att, !is.na(`Company Member Type`) & !is.na(`Paid Through`))
+```
+
+```{r}
+# some repeat, because different people from the same company attend the same event.......
+# remove the repeat company name.....
+unique_cleaned_23att <- unique(cleaned_23att[, c("Company", "Title", "Paid Through", "Company Member Type")])
+unique_cleaned_22att <- unique(cleaned_22att[, c("Company", "Title", "Paid Through", "Company Member Type")])
+unique_cleaned_21att <- unique(cleaned_21att[, c("Company", "Title", "Paid Through", "Company Member Type")])
+unique_cleaned_20att <- unique(cleaned_20att[, c("Company", "Title", "Paid Through", "Company Member Type")])
+unique_cleaned_19att <- unique(cleaned_19att[, c("Company", "Title", "Paid Through", "Company Member Type")])
+unique_cleaned_18att <- unique(cleaned_18att[, c("Company", "Title", "Paid Through", "Company Member Type")])
+```
+
+```{r}
+# merge 1028- 2023 dataset to one dataset
+Merge_Cleaned_eventatt <- merge(unique_cleaned_23att, unique_cleaned_22att, by = c("Company", "Title", "Paid Through", "Company Member Type"), all = TRUE)
+```
+
+```{r}
+Merge_Cleaned_eventatt <- merge(Merge_Cleaned_eventatt, unique_cleaned_21att, by = c("Company", "Title", "Paid Through", "Company Member Type"), all = TRUE)  
+Merge_Cleaned_eventatt <- merge(Merge_Cleaned_eventatt, unique_cleaned_20att, by = c("Company", "Title", "Paid Through", "Company Member Type"), all = TRUE)  
+Merge_Cleaned_eventatt <- merge(Merge_Cleaned_eventatt, unique_cleaned_19att, by = c("Company", "Title", "Paid Through", "Company Member Type"), all = TRUE)  
+Merge_Cleaned_eventatt <- merge(Merge_Cleaned_eventatt, unique_cleaned_18att, by = c("Company", "Title", "Paid Through", "Company Member Type"), all = TRUE)  
+```
+
+```{r}
+unique_titles <- unique(Merge_Cleaned_eventatt$Title)
+unique_title_count <- length(unique_titles)
+unique_title_count
+# Merge_Cleaned_eventatt has 279 different events
+```
+
+# +++++++++++++ Merge event date to the event att dataset based on "Title" +++++++++++++++++ #
+```{r}
+merged_df <- Merge_Cleaned_eventatt %>%
+  left_join(select(Merge_Cleaned_eventdate, Title, Event.Date), by = "Title")
+```
+
+```{r}
+# this dataset is the cleaned dataset with "Company" "Title" (Event Name), "Paid Through" (Paid Through Date), "Company Member Type", "Event.Date" (Event Date)
+#write.csv(merged_df, file = "Att_with_eventdate.csv", row.names = FALSE)
+```
+
+```{r}
+# Some Event Date are "NA"
+# Check how many NA (762)
+event_dates_count <- sum(!is.na(merged_df$Event.Date))
+print(event_dates_count) # 8621
+na_count <- sum(is.na(merged_df$Event.Date))
+print(na_count) # 762
+```
+
+```{r}
+# Check what event does not has the "Event Date"
+# 28 events do not has the event date...................
+titles_with_na_event_date <- merged_df$Title[is.na(merged_df$Event.Date)]
+unique_titles_with_na_event_date <- unique(titles_with_na_event_date)
+print(unique_titles_with_na_event_date)
+# below 28 events do not has event date information.
+```
+# Create monthly indicator 
+
+############# FOR EVENT #############
+
+```{r}
+merged_df <- na.omit(merged_df)
+# 8617 obs
+```
+
+
+```{r}
+merged_df <- merged_df %>%
+  select(-`Title`)
+```
+
+
+```{r}
+# Load the lubridate package for date manipulation
+library(lubridate)
+# Define the start date
+start_date <- as.Date("2018-01-01")
+# Define the end date
+end_date <- as.Date("2023-12-31")
+# Calculate the number of months since start_date for each date in the 'Event.Date' column
+merged_df$Month <- 12 * (year(merged_df$Event.Date) - year(start_date)) + month(merged_df$Event.Date) - month(start_date) + 1
+```
+
+
+```{r}
+merged_df$Event_Frequency <- 1
+# all become one, however, BUT what if a company participates in multiple events in the same month?
+```
+
+
+```{r}
+# this way will let the frequency represent the number of times it participates in the event
+new_merged_df <- merged_df %>%
+  group_by(Company, Month) %>%
+  mutate(Event_Frequency = n()) %>%
+  distinct(Company, Month, .keep_all = TRUE)
+# 7354 obs
+```
+
+
+```{r}
+#write.csv(mem_data, file = "/Users/heiyo/Desktop/MQE/Capstone/mem_data.csv", row.names = FALSE)
+```
+
+
+```{r}
+mem_data <- read.csv("/Users/jamesturner/Desktop/Tech Council/mem_data_with_noeventandbenefic.csv")
+# data from Neel
+```
+
+
+```{r}
+# Install the sqldf package from CRAN if you haven't already
+install.packages("sqldf")
+# Load the sqldf library
+library(sqldf)
+# Perform a left join operation selecting only the required columns
+mem_data <- sqldf("SELECT mem_data.*, new_merged_df.Event_Frequency 
+                   FROM mem_data 
+                   LEFT JOIN new_merged_df 
+                   USING (Month, Company)")
+# same 208512 -> correct
+```
+
+```{r}
+# Replace NA values in the "event_frequency" column with 0
+mem_data$Event_Frequency[is.na(mem_data$Event_Frequency)] <- 0
+```
+
+################### UPDATE FOR BP ##############
+
+```{r}
+install.packages("openxlsx")
+```
+
+```{r}
+library(openxlsx)
+# Specify the file path for the Excel file
+#excel_file_path <- "/Users/heiyo/Desktop/MQE/Capstone/mem_data.xlsx"
+# Export mem_data as an Excel file
+#write.xlsx(mem_data, file = excel_file_path, rowNames = FALSE)
+# Provide a message indicating successful export
+#cat("mem_data has been exported as an Excel file to:", excel_file_path, "\n")
+```
+
+```{r}
+# Check if there are any numbers other than 0 in the Event_Frequency column
+any_other_than_zero <- any(mem_data$Event_Frequency != 0)
+# Print the result
+if (any_other_than_zero) {
+  cat("There are numbers other than 0 in the Event_Frequency column.\n")
+} else {
+  cat("There are no numbers other than 0 in the Event_Frequency column.\n")
+}
+```
+
+```{r}
+# Count the number of non-zero values in the Event_Frequency column
+non_zero_count <- sum(mem_data$Event_Frequency != 0)
+# Print the count
+cat("Number of non-zero values in the Event_Frequency column:", non_zero_count, "\n")
+```
+
+#Benefit Participants added to mem_data dataset 
+
+```{r}
+# Load necessary libraries
+library(openxlsx)
+benefit_participants <- read.xlsx("/Users/jamesturner/Desktop/Tech Council/BenefitParticipants.xlsx")
+# Extract the list of companies that used benefits
+benefit_companies <- unique(benefit_participants$Company)
+# Create a new column in mem_data called "benefit_usage" initialized with 0
+mem_data$Benefit_Usage <- 0
+# If appear in BenefitParticipants, = 1
+mem_data$Benefit_Usage[mem_data$Company %in% benefit_companies] <- 1
+#write.xlsx(mem_data, file = "/Users/heiyo/Desktop/MQE/Capstone/mem_data_with_benefit_usage.xlsx", rowNames = FALSE)
+#cat("mem_data with benefit_usage column has been exported as an Excel file.\n")
+```
+
+```{r}
+# Count the number of occurrences of "1" in the benefit_usage column
+num_benefit_users <- sum(mem_data$Benefit_Usage == 1)
+#cat("Number of companies using benefits (with benefit_usage = 1):", num_benefit_users, "\n")
+```
+
+```{r}
+# drop (Erased)
+mem_data <- subset(mem_data, Company != "(Erased)")
+```
+
+####### CHANGE EVENT FREQUENCY to BINARY #######
+```{r}
+# 208440 observations
+mem_data$Event_Frequency[mem_data$Event_Frequency > 1] <- 1
+# Now Event_Frequency becomes binary variable
+```
+
+```{r}
+# Change the name 'Event_Frequency' to 'Event_Participation'
+mem_data <- mem_data %>% 
+  rename(Event_Participation = Event_Frequency)
+```
+
+######## UPDATE SCORECARD #######
+```{r}
+scorecard_data <- read.csv("/Users/jamesturner/Desktop/Tech Council/sc_alldata_mems_forcombine.csv")
+# 19649 observations
+```
+
+```{r}
+# Drop useless col
+scorecard_data <- scorecard_data %>%
+  select(-`SC.Entry.Date`, -`SC.Type`, -`X`)
+```
+
+```{r}
+# create 'Month' in scorecard
+scorecard_data$Month <- 12 * (year(scorecard_data$SC.Date) - year(start_date)) + month(scorecard_data$SC.Date) - month(start_date) + 1
+```
+
+```{r}
+# check what scorecard 'type' we have
+# unique_sctype <- unique(scorecard_data$type)
+#  "Business Development" "Outreach"             "Visibility"           "Talent"              
+#  "Advocacy"             "Engagement"           "Benefits"             "General" 
+```
+
+#### after creating binary col for scorecard, I find that our mem_data has mistake,(a lot of replicating rows, for example Company Name'3Cloud', '4th Source'......) #### ( I didn't realize this issue until I trying to figure out what is the meaning of Payment.Amount, and the month value of those companies are repeated twice. I don't know how to fix it, and it is too late and I got a little bit sore throat.) ####
+
+#### for creating binary col, i tried to create cols such as SC.BusinessDevelopment, SC.Outreach...in scorecard data and then merge to mem_data, but a lot of duplicate cols... therefore, I do each type seperatly.
+
+#### For SC.BusinessDevelopment ####
+```{r}
+BD_scorecard_data <- scorecard_data %>%
+  filter(type == "Business Development") %>%
+  mutate(SC.BusinessDevelopment = 1)
+# 2256 obs
+###### some repeat value appear
+###### for example 	
+###### 4CTechnologies (Month 45 appear twice, probably because type Business Development has different reasoning)
+###### in order to not let mem_data has duplicate obs, I will aggregate BD_scorecard_data
+```
+
+```{r}
+aggregated_BD_scorecard_data <- BD_scorecard_data %>%
+  group_by(Company, Month) %>%
+  summarise(SC.BusinessDevelopment = sum(SC.BusinessDevelopment)) %>%
+  ungroup()
+# 1860 obs
+```
+
+```{r}
+mem_data <- merge(mem_data, aggregated_BD_scorecard_data[, c("Company", "Month", "SC.BusinessDevelopment")], 
+                  by = c("Company", "Month"), all.x = TRUE)
+# finally............
+```
+
+```{r}
+# Replace NA values in SC.BusinessDevelopment column with 0
+mem_data$SC.BusinessDevelopment <- ifelse(is.na(mem_data$SC.BusinessDevelopment), 0, mem_data$SC.BusinessDevelopment)
+```
+
+```{r}
+# SC.BusinessDevelopment becomes binary col
+mem_data$SC.BusinessDevelopment[mem_data$SC.BusinessDevelopment > 1] <- 1
+```
+
+#### For SC.Outreach ####
+```{r}
+Out_scorecard_data <- scorecard_data %>%
+  filter(type == "Outreach") %>%
+  mutate(SC.Outreach = 1)
+# 10748 obs
+```
+
+```{r}
+aggregated_Out_scorecard_data <- Out_scorecard_data %>%
+  group_by(Company, Month) %>%
+  summarise(SC.Outreach = sum(SC.Outreach)) %>%
+  ungroup()
+# 7253 obs
+```
+
+```{r}
+mem_data <- merge(mem_data, aggregated_Out_scorecard_data[, c("Company", "Month", "SC.Outreach")], 
+                  by = c("Company", "Month"), all.x = TRUE)
+# still 208440 obs
+```
+
+```{r}
+# Replace NA values to 0
+mem_data$SC.Outreach <- ifelse(is.na(mem_data$SC.Outreach), 0, mem_data$SC.Outreach)
+```
+
+```{r}
+mem_data$SC.Outreach[mem_data$SC.Outreach > 1] <- 1
+```
+
+#### For SC.Visibility ####
+```{r}
+Visibility_scorecard_data <- scorecard_data %>%
+  filter(type == "Visibility") %>%
+  mutate(SC.Visibility = 1)
+# 3141 obs
+```
+
+```{r}
+aggregated_Visibility_scorecard_data <- Visibility_scorecard_data %>%
+  group_by(Company, Month) %>%
+  summarise(SC.Visibility = sum(SC.Visibility)) %>%
+  ungroup()
+# 2656 obs
+```
+
+```{r}
+mem_data <- merge(mem_data, aggregated_Visibility_scorecard_data[, c("Company", "Month", "SC.Visibility")], 
+                  by = c("Company","Month"), all.x = TRUE)
+# still 208440 obs
+```
+
+```{r}
+# Replace NA values to 0
+mem_data$SC.Visibility <- ifelse(is.na(mem_data$SC.Visibility), 0, mem_data$SC.Visibility)
+```
+
+```{r}
+mem_data$SC.Visibility[mem_data$SC.Visibility > 1] <- 1
+```
+
+#### For SC.Talent ####
+```{r}
+Talent_scorecard_data <- scorecard_data %>%
+  filter(type == "Talent") %>%
+  mutate(SC.Talent = 1)
+# 1841 obs
+```
+
+```{r}
+aggregated_Talent_scorecard_data <- Talent_scorecard_data %>%
+  group_by(Company, Month) %>%
+  summarise(SC.Talent = sum(SC.Talent)) %>%
+  ungroup()
+# 1517 obs
+```
+
+```{r}
+mem_data <- merge(mem_data, aggregated_Talent_scorecard_data[, c("Company", "Month", "SC.Talent")], 
+                  by = c( "Company","Month"), all.x = TRUE)
+# still 208440 obs
+```
+
+```{r}
+# Replace NA values to 0
+mem_data$SC.Talent <- ifelse(is.na(mem_data$SC.Talent), 0, mem_data$SC.Talent)
+```
+
+```{r}
+mem_data$SC.Talent[mem_data$SC.Talent > 1] <- 1
+```
+
+#### For SC.Advocacy ####
+```{r}
+Advocacy_scorecard_data <- scorecard_data %>%
+  filter(type == "Advocacy") %>%
+  mutate(SC.Advocacy = 1)
+# 924 obs
+```
+
+```{r}
+aggregated_Advocacy_scorecard_data <- Advocacy_scorecard_data %>%
+  group_by(Company, Month) %>%
+  summarise(SC.Advocacy = sum(SC.Advocacy)) %>%
+  ungroup()
+# 872 obs
+```
+
+```{r}
+mem_data <- merge(mem_data, aggregated_Advocacy_scorecard_data[, c("Company", "Month", "SC.Advocacy")], 
+                  by = c( "Company", "Month"), all.x = TRUE)
+# still 208440 obs
+```
+
+```{r}
+# Replace NA values to 0
+mem_data$SC.Advocacy <- ifelse(is.na(mem_data$SC.Advocacy), 0, mem_data$SC.Advocacy)
+```
+
+```{r}
+mem_data$SC.Advocacy[mem_data$SC.Advocacy > 1] <- 1
+```
+
+#### For SC.Engagement ####
+```{r}
+Engagement_scorecard_data <- scorecard_data %>%
+  filter(type == "Engagement") %>%
+  mutate(SC.Engagement = 1)
+# 118 obs
+```
+
+```{r}
+aggregated_Engagement_scorecard_data <- Engagement_scorecard_data %>%
+  group_by(Company, Month) %>%
+  summarise(SC.Engagement = sum(SC.Engagement)) %>%
+  ungroup()
+# 116 obs
+```
+
+```{r}
+mem_data <- merge(mem_data, aggregated_Engagement_scorecard_data[, c("Company", "Month", "SC.Engagement")], 
+                  by = c( "Company","Month"), all.x = TRUE)
+# still 208440 obs
+```
+
+```{r}
+# Replace NA values to 0
+mem_data$SC.Engagement <- ifelse(is.na(mem_data$SC.Engagement), 0, mem_data$SC.Engagement)
+```
+
+```{r}
+mem_data$SC.Engagement[mem_data$SC.Engagement > 1] <- 1
+```
+
+#### For SC.Benefits ####
+```{r}
+Benefits_scorecard_data <- scorecard_data %>%
+  filter(type == "Benefits") %>%
+  mutate(SC.Benefits = 1)
+# 232 obs
+```
+
+```{r}
+aggregated_Benefits_scorecard_data <- Benefits_scorecard_data %>%
+  group_by(Company, Month) %>%
+  summarise(SC.Benefits = sum(SC.Benefits)) %>%
+  ungroup()
+# 201 obs
+```
+
+```{r}
+mem_data <- merge(mem_data, aggregated_Benefits_scorecard_data[, c("Company", "Month", "SC.Benefits")], 
+                  by = c("Company", "Month"), all.x = TRUE)
+```
+
+```{r}
+# Replace NA values to 0
+mem_data$SC.Benefits <- ifelse(is.na(mem_data$SC.Benefits), 0, mem_data$SC.Benefits)
+```
+
+```{r}
+mem_data$SC.Benefits[mem_data$SC.Benefits > 1] <- 1
+```
+
+#### For SC.General ####
+```{r}
+General_scorecard_data <- scorecard_data %>%
+  filter(type == "General") %>%
+  mutate(SC.General = 1)
+# 389 obs
+```
+
+```{r}
+aggregated_General_scorecard_data <- General_scorecard_data %>%
+  group_by(Company, Month) %>%
+  summarise(SC.General = sum(SC.General)) %>%
+  ungroup()
+# 309 obs
+```
+
+```{r}
+mem_data <- merge(mem_data, aggregated_General_scorecard_data[, c("Company", "Month", "SC.General")], 
+                  by = c("Company", "Month"), all.x = TRUE)
+```
+
+```{r}
+# Replace NA values to 0
+mem_data$SC.General <- ifelse(is.na(mem_data$SC.General), 0, mem_data$SC.General)
+```
+
+```{r}
+mem_data$SC.General[mem_data$SC.General > 1] <- 1
+```
+
+```{r}
+write.csv(mem_data,"mem_data_eventbenefitscorecard.csv")
+```
+
+
+```{r}
+# Load required libraries for survival analysis
+#install.packages("survival")
+library(survival)
+
+# Load your dataset
+final_data <- read.csv("/Users/jamesturner/Desktop/Tech Council/final_data.csv")  
+
+# Create a new dataset where each row represents a company for each month
+expanded_data <- expand.grid(Company = unique(final_data$Company),
+                              Month = 1:72)  # Assuming you have 72 months of data
+expanded_data <- merge(expanded_data, final_data, by = c("Company", "Month"), all.x = TRUE)
+
+# Replace missing values in Member_Status with 0 (indicating not a member)
+expanded_data$Member_Status[is.na(expanded_data$Member_Status)] <- 0
+
+# Sort the dataset by Company and Month
+expanded_data <- expanded_data[order(expanded_data$Company, expanded_data$Month), ]
+
+# Create a new column to represent the status transition from 1 to 0
+expanded_data$Event <- ifelse(expanded_data$Member_Status == 1 & c(0, head(expanded_data$Member_Status, -1)) == 0, 1, 0)
+
+# Create the survival object
+surv_obj <- Surv(time = expanded_data$Month, event = expanded_data$Event)
+
+# Fit a survival model using Cox proportional hazards regression
+surv_model <- coxph(surv_obj ~ Event_Participation + Benefit_Usage + SC.BusinessDevelopment + SC.Outreach + SC.Visibility + SC.Talent + SC.Advocacy + SC.Engagement + SC.Benefits + SC.General, data = expanded_data)
+
+# Summary of the survival model
+summary(surv_model)
+```
+#All Features Graph
+
+```{r}
+# Load required libraries
+library(dplyr)
+library(ggplot2)
+
+# Assuming 'final_data' is your data frame
+
+# Step 1: Filter rows where Member_Status transitions from 1 to 0
+transition_rows <- final_data %>%
+  filter(Member_Status == 1 & lead(Member_Status) == 0)
+
+# Step 2: Calculate percentage of companies using each feature one, two, three, and four years before the transition
+# Assuming Event_Participation, Benefit_Usage, SC.BusinessDevelopment, etc. are columns in your DataFrame
+
+# Function to calculate percentage of companies using a feature
+calculate_percentage <- function(feature, data) {
+  one_year_before <- mean(data[data$Month %in% (transition_rows$Month - 12), ][[feature]])
+  two_years_before <- mean(data[data$Month %in% (transition_rows$Month - 24), ][[feature]])
+  three_years_before <- mean(data[data$Month %in% (transition_rows$Month - 36), ][[feature]])
+  four_years_before <- mean(data[data$Month %in% (transition_rows$Month - 48), ][[feature]])
+  return(c(one_year_before, two_years_before, three_years_before, four_years_before))
+}
+
+
+# Calculate percentages for each feature
+features <- c("Event_Participation", "Benefit_Usage", "SC.BusinessDevelopment", "SC.Outreach",
+              "SC.Visibility", "SC.Talent", "SC.Advocacy", "SC.Engagement", "SC.Benefits", "SC.General")
+
+percentages <- sapply(features, function(feature) {
+  calculate_percentage(feature, final_data)
+})
+
+
+# Step 3: Plot the results
+# Prepare data for plotting
+plot_data <- data.frame(
+  Feature = rep(features, each = 4),
+  Period = rep(c("One Year Before", "Two Years Before", "Three Years Before", "Four Years Before"), times = length(features)),
+  Percentage = c(percentages)
+)
+
+# Convert 'Period' to factor with appropriate levels and reverse the order
+plot_data$Period <- factor(plot_data$Period, levels = rev(c("One Year Before", "Two Years Before", "Three Years Before", "Four Years Before")))
+
+# Define custom color palette for better discernibility
+custom_colors <- c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#FFF533", "#A65628", "#F781BF", "#999999", "#66CCCC")
+
+# Plot with custom colors and reversed x-axis, and y-axis as percentage
+ggplot(plot_data, aes(x = Period, y = Percentage * 100, color = Feature)) +
+  geom_point() +
+  geom_line() + # Add a line between the dots
+  labs(x = "", y = "Percentage of Usage", title = "% of Member Usage Before Leaving PTC") +
+  theme_minimal() +
+  theme(legend.position = "right") +
+  scale_color_manual(values = custom_colors) +
+  scale_y_continuous(labels = scales::percent_format(scale = 1))
+```
+
+
+
+```{r}
+# Load required libraries
+library(dplyr)
+library(ggplot2)
+
+# Assuming 'final_data' is your data frame
+
+# Step 1: Filter rows where Member_Status transitions from 1 to 0
+transition_rows <- final_data %>%
+  filter(Member_Status == 1 & lead(Member_Status) == 0)
+
+# Step 2: Calculate percentage of companies using each feature one, two, three, and four years before the transition
+# Assuming Event_Participation, Benefit_Usage, SC.BusinessDevelopment, etc. are columns in your DataFrame
+
+# Function to calculate percentage of companies using a feature for those with Member_Status = 1 for longer than 48 months
+calculate_percentage_long_term <- function(feature, data) {
+  long_term_members <- data %>%
+    filter(Member_Status == 1 & Month <= max(transition_rows$Month) - 48)  # Filter companies with Member_Status = 1 for longer than 48 months
+  
+  percentage <- mean(long_term_members[[feature]])
+  
+  return(percentage)
+}
+
+# Calculate percentages for each feature
+features <- c("Event_Participation", "Benefit_Usage", "SC.BusinessDevelopment", "SC.Outreach",
+              "SC.Visibility", "SC.Talent", "SC.Advocacy", "SC.Engagement", "SC.Benefits", "SC.General")
+
+percentages_long_term <- sapply(features, function(feature) {
+  calculate_percentage_long_term(feature, final_data)
+})
+
+# Step 3: Plot the results
+# Prepare data for plotting
+plot_data_long_term <- data.frame(
+  Feature = features,
+  Percentage_Long_Term = percentages_long_term
+)
+
+# Plot
+ggplot(plot_data_long_term, aes(x = Feature, y = Percentage_Long_Term)) +
+  geom_bar(stat = "identity", fill = "green") +
+  labs(x = "Feature", y = "Percentage of Usage", title = "% of Member Usage for Companies with Member_Status = 1 for > 48 Months") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+
+#Feautures with Small Percentages 
+
+```{r}
+
+# Step 1: Filter rows where Member_Status transitions from 1 to 0
+transition_rows <- final_data %>%
+  filter(Member_Status == 1 & lead(Member_Status) == 0)
+
+# Step 2: Calculate percentage of companies using each feature one, two, three, and four years before the transition
+# Assuming Event_Participation, Benefit_Usage, SC.BusinessDevelopment, etc. are columns in your DataFrame
+
+# Function to calculate percentage of companies using a feature
+calculate_percentage <- function(feature, data) {
+  one_year_before <- mean(data[data$Month %in% (transition_rows$Month - 12), ][[feature]])
+  two_years_before <- mean(data[data$Month %in% (transition_rows$Month - 24), ][[feature]])
+  three_years_before <- mean(data[data$Month %in% (transition_rows$Month - 36), ][[feature]])
+  four_years_before <- mean(data[data$Month %in% (transition_rows$Month - 48), ][[feature]])
+  return(c(one_year_before, two_years_before, three_years_before, four_years_before))
+}
+
+# Calculate percentages for each feature
+features <- c("Event_Participation", "Benefit_Usage", "SC.BusinessDevelopment", "SC.Outreach",
+              "SC.Visibility", "SC.Talent", "SC.Advocacy", "SC.Engagement", "SC.Benefits", "SC.General")
+
+percentages <- sapply(features, function(feature) {
+  calculate_percentage(feature, final_data)
+})
+
+# Prepare data for plotting
+plot_data <- data.frame(
+  Feature = rep(features, each = 4),
+  Period = rep(c("One Year Before", "Two Years Before", "Three Years Before", "Four Years Before"), times = length(features)),
+  Percentage = c(percentages)
+)
+
+# Convert 'Period' to factor with appropriate levels and reverse the order
+plot_data$Period <- factor(plot_data$Period, levels = rev(c("One Year Before", "Two Years Before", "Three Years Before", "Four Years Before")))
+
+# Define features with small percentages
+small_percentage_features <- c("SC.BusinessDevelopment", "SC.Visibility", "SC.Talent", "SC.Advocacy", "SC.Engagement", "SC.Benefits", "SC.General")
+
+# Filter plot_data for small percentage features
+plot_data_small <- plot_data %>% filter(Feature %in% small_percentage_features)
+
+# Define custom color palette for better discernibility
+custom_colors <- c("#4DAF4A", "#984EA3", "#FF7F00", "#FFFF33", "#A65628", "#999999", "#66CCCC")
+
+# Plot for small percentage features with custom colors and y-axis as percentage
+ggplot(plot_data_small, aes(x = Period, y = Percentage * 100, color = Feature)) +
+  geom_point() +
+  geom_line() + # Add a line between the dots
+  labs(x = "", y = "Percentage of Usage", title = "% of Member Usage Before Leaving PTC (Small Percentage Features)") +
+  theme_minimal() +
+  theme(legend.position = "right") +
+  scale_color_manual(values = custom_colors) +
+  scale_y_continuous(labels = scales::percent_format(scale = 1))
+```
+
+
+
+
+
+
+
+
+
+

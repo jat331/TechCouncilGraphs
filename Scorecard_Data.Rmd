@@ -1,0 +1,158 @@
+---
+title: "Scorecard_Data"
+output: html_document
+date: "2024-01-29"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readxl)
+library(tidyr)
+library(ggplot2)
+library(tidyverse)
+```
+
+```{r}
+sc_data <- "C:/Users/Neel/Desktop/2023-2024/Spring 2024/Capstone/Scorecards 2018 through 2023.xlsx"
+sheet <- excel_sheets(sc_data)
+sc_2018data <- read_excel(sc_data, sheet = sheet[1])
+sc_2019data <- read_excel(sc_data, sheet = sheet[2])
+sc_2020data <- read_excel(sc_data, sheet = sheet[3])
+sc_2021data <- read_excel(sc_data, sheet = sheet[4])
+sc_2022data <- read_excel(sc_data, sheet = sheet[5])
+sc_2023data <- read_excel(sc_data, sheet = sheet[6])
+#This chunk of code takes the Scorecard excel file and isolates every sheet by the year
+```
+#The next few chunks of codes shows how many unique values are present for "SC Type" by year
+```{r}
+sc_type2018 <- unique(sc_2018data$`SC Type`)
+print(sc_type2018)
+```
+```{r}
+sc_type2019 <- unique(sc_2019data$`SC Type`)
+print(sc_type2019)
+```
+```{r}
+sc_type2020 <- unique(sc_2020data$`SC Type`)
+print(sc_type2020)
+```
+```{r}
+sc_type2021 <- unique(sc_2021data$`SC Type`)
+print(sc_type2021)
+```
+```{r}
+sc_type2022 <- unique(sc_2022data$`SC Type`)
+print(sc_type2022)
+```
+```{r}
+sc_type2023 <- unique(sc_2023data$`SC Type`)
+print(sc_type2023)
+```
+
+```{r}
+sc_2018data <- sc_2018data %>% separate(`SC Type`, into = c("type", "reasoning"), sep = ":", remove = FALSE)
+sc_2019data <- sc_2019data %>% separate(`SC Type`, into = c("type", "reasoning"), sep = ":", remove = FALSE)
+sc_2020data <- sc_2020data %>% separate(`SC Type`, into = c("type", "reasoning"), sep = ":", remove = FALSE)
+sc_2021data <- sc_2021data %>% separate(`SC Type`, into = c("type", "reasoning"), sep = ":", remove = FALSE)
+sc_2022data <- sc_2022data %>% separate(`SC Type`, into = c("type", "reasoning"), sep = ":", remove = FALSE)
+sc_2023data <- sc_2023data %>% separate(`SC Type`, into = c("type", "reasoning"), sep = ":", remove = FALSE)
+#This chunk separates the values in "SC Type" column into "type" and "reasoning". "type" is the specific scorecard type, whereas the reasoning is the reasoning as to why it belongs into that SC
+```
+```{r}
+#Checking for unique values present in the new "type" column
+unique(sc_2018data$type)
+unique(sc_2019data$type)
+unique(sc_2020data$type)
+unique(sc_2021data$type)
+unique(sc_2022data$type)
+unique(sc_2023data$type)
+```
+ 
+```{r}
+#Graph for all types of Scorecards in 2018
+plot_2018 <- ggplot(sc_2018data, aes(x = sc_2018data$type))+ geom_bar(stat = "count", fill = "purple")+ geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.25) +labs(title = "2018 Scorecards", x = "SC type" , y = "# of Scorecards")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+plot_2018
+```
+```{r}
+#Graph for all types of Scorecards in 2019
+plot_2019 <- ggplot(sc_2019data, aes(x = sc_2019data$type))+ geom_bar(stat = "count", fill = "purple")+ geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.25) +labs(title = "2019 Scorecards", x = "SC type" , y = "# of Scorecards")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+plot_2019
+```
+```{r}
+#Graph for all types of Scorecards in 2020
+plot_2020 <- ggplot(sc_2020data, aes(x = sc_2020data$type))+ geom_bar(stat = "count", fill = "purple")+ geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.25) +labs(title = "2020 Scorecards", x = "SC type" , y = "# of Scorecards")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+plot_2020
+```
+```{r}
+#Graph for all types of Scorecards in 2021
+plot_2021 <- ggplot(sc_2021data, aes(x = sc_2021data$type))+ geom_bar(stat = "count", fill = "purple")+ geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.25) +labs(title = "2021 Scorecards", x = "SC type" , y = "# of Scorecards")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+plot_2021
+```
+```{r}
+#Graph for all types of Scorecards in 2022
+plot_2022 <- ggplot(sc_2022data, aes(x = sc_2022data$type))+ geom_bar(stat = "count", fill = "purple")+ geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.25) +labs(title = "2022 Scorecards", x = "SC type" , y = "# of Scorecards")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+plot_2022
+```
+```{r}
+#Graph for all types of Scorecards in 2023
+plot_2023 <- ggplot(sc_2023data, aes(x = sc_2023data$type))+ geom_bar(stat = "count", fill = "purple")+ geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.25) +labs(title = "2023 Scorecards", x = "SC type" , y = "# of Scorecards")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+plot_2023
+```
+```{r}
+#Graph for all types of Scorecards in 2018-2023 (had to combine all isolated datasets into one before plotting)
+sc_alldata <- rbind(sc_2018data, sc_2019data, sc_2020data, sc_2021data, sc_2022data, sc_2023data)
+
+plot_all <- ggplot(sc_alldata, aes(x = sc_alldata$type))+ geom_bar(stat = "count", fill = "purple")+ geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.25) +labs(title = "Scorecards from 2018-2023", x = "SC type" , y = "# of Scorecards")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+plot_all
+```
+```{r}
+#Graph for all types of Scorecards in 2018-2023 for M or MN (Filtered out all NM from sc_alldata)
+sc_alldata <- as.data.frame(sc_alldata)
+sc_alldata_mems <- sc_alldata %>% filter(sc_alldata$`Member Type` %in% c("M","MN"))
+unique(sc_alldata_mems$`Member Type`)
+plot_allmems <- ggplot(sc_alldata_mems, aes(x = sc_alldata_mems$type))+ geom_bar(stat = "count", fill = "purple")+ geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.25) +labs(title = "Scorecards from 2018-2023 for all Members", x = "SC type" , y = "# of Scorecards")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+plot_allmems
+```
+
+```{r}
+#Categorizing relevant SC Types into main categories
+#Below converts Fortyx80 values into talent
+sc_alldata_mems <- sc_alldata_mems %>% mutate(type = ifelse(type %in% c("Fortyx80", "FortyX80"), "Talent", type))
+
+#Below removes all "Past Due" values
+sc_alldata_mems <- sc_alldata_mems %>% filter(type != "Past Due")
+
+#Below removes the 1 "referral" observation
+sc_alldata_mems <- sc_alldata_mems %>% filter(type != "Referral")
+
+#Below converts "No" into reasoning values
+sc_alldata_mems <- sc_alldata_mems %>%
+  mutate(reasoning = if_else(type == "No", substr(reasoning, 2, nchar(reasoning)), reasoning))
+sc_alldata_mems <- sc_alldata_mems %>% mutate(type = if_else(type == "No",reasoning, type))
+
+plot_allmems <- ggplot(sc_alldata_mems, aes(x = sc_alldata_mems$type))+ geom_bar(stat = "count", fill = "purple")+ geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.25) +labs(title = "Scorecards from 2018-2023 for all Members", x = "SC type" , y = "# of Scorecards")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+plot_allmems
+```
+
+```{r}
+#Sales breakdown NEED TO ASK QUESTIONS ON THIS!
+sc_mems_sales <- sc_alldata_mems %>% filter(type == "Sales")
+plot_mem_sales <- ggplot(sc_mems_sales, aes(x = sc_mems_sales$reasoning))+ geom_bar(stat = "count", fill = "purple")+ geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.25) +labs(title = "Category of Sales SC", x = "Reasoning" , y = "# of Scorecards")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  
+plot_mem_sales
+
+```
+
+
