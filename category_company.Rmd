@@ -17,8 +17,8 @@ library(lubridate)
 ```
 
 ```{r}
-member_data <- "/Users/heiyo/Desktop/MQE/Capstone/Current.Members.JoinDate.xlsx"
-member_data1 <- "/Users/heiyo/Desktop/MQE/Capstone/NonRenewals.xlsx"
+member_data <- "/Users/jamesturner/Desktop/MQE/Capstone/Current.Members.JoinDate.xlsx"
+member_data1 <- "/Users/jamesturner/Desktop/MQE/Capstone/NonRenewals.xlsx"
 sheet <- excel_sheets(member_data)
 sheet1 <- excel_sheets(member_data1)
 member1 <- read_excel(member_data, sheet = sheet[1])
